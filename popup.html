@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OpenAI Query Extension</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>OpenAI Query</h2>
+        <div id="api-key-section">
+            <input type="password" id="api-key" placeholder="Enter your OpenAI API key">
+            <button id="save-api-key">Save API Key</button>
+        </div>
+        <div id="query-section">
+            <textarea id="query-input" placeholder="Enter your query here..."></textarea>
+            <button id="submit-query">Submit Query</button>
+        </div>
+        <div id="response-section">
+            <div id="loading" class="hidden">Loading...</div>
+            <div id="response-text"></div>
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html> 
