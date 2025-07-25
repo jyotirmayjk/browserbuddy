@@ -169,4 +169,4 @@ For issues, questions, or feature requests, please open an issue in the project 
 
 ---
 
-**Happy AI-powered browsing! 🚀** 
+**Happy AI-powered browsing! 🚀**
