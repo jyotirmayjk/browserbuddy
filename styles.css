@@ -10,11 +10,7 @@ h2 {
     text-align: center;
 }
 
-#api-key-section, #query-section {
-    margin-bottom: 20px;
-}
-
-input[type="password"], textarea {
+textarea {
     width: 100%;
     padding: 8px;
     margin-bottom: 10px;
@@ -26,6 +22,21 @@ input[type="password"], textarea {
 textarea {
     height: 100px;
     resize: vertical;
+}
+
+#status-message {
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.4;
+}
+
+#status-message.warning {
+    color: #b26a00;
+}
+
+#status-message.error {
+    color: #d32f2f;
 }
 
 button {

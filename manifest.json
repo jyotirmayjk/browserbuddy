@@ -1,10 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "OpenAI Query Extension",
+  "name": "Prompt API Query Extension",
   "version": "1.0",
-  "description": "Chrome extension to query OpenAI's API",
+  "description": "Chrome extension that uses the experimental Prompt API to query Chrome's built-in language model",
   "permissions": [
-    "storage",
     "contextMenus",
     "activeTab",
     "scripting"
@@ -25,4 +24,4 @@
   "action": {
     "default_popup": "popup.html"
   }
-} 
+}

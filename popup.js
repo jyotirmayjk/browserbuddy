@@ -1,40 +1,96 @@
+const POPUP_SYSTEM_MESSAGE = 'You are the assistant accessible from the Chrome toolbar. Provide clear, helpful responses based on the user\'s question.';
+
 document.addEventListener('DOMContentLoaded', function() {
-    const apiKeyInput = document.getElementById('api-key');
-    const saveApiKeyButton = document.getElementById('save-api-key');
     const queryInput = document.getElementById('query-input');
     const submitQueryButton = document.getElementById('submit-query');
     const responseText = document.getElementById('response-text');
     const loading = document.getElementById('loading');
+    const statusMessage = document.getElementById('status-message');
 
-    // Load saved API key
-    chrome.storage.sync.get(['openai_api_key'], function(result) {
-        if (result.openai_api_key) {
-            apiKeyInput.value = result.openai_api_key;
-        }
-    });
-
-    // Save API key
-    saveApiKeyButton.addEventListener('click', function() {
-        const apiKey = apiKeyInput.value.trim();
-        if (apiKey) {
-            chrome.storage.sync.set({ 'openai_api_key': apiKey }, function() {
-                alert('API key saved successfully!');
-            });
-        }
-    });
-
-    // Function to submit query
-    async function submitQuery() {
-        const query = queryInput.value.trim();
-        const apiKey = apiKeyInput.value.trim();
-
-        if (!apiKey) {
-            alert('Please enter your OpenAI API key first!');
+    function setStatus(message, tone = 'info') {
+        if (!statusMessage) {
             return;
         }
 
+        statusMessage.textContent = message;
+        statusMessage.classList.remove('warning', 'error');
+
+        if (tone === 'warning') {
+            statusMessage.classList.add('warning');
+        } else if (tone === 'error') {
+            statusMessage.classList.add('error');
+        }
+    }
+
+    async function checkAvailability() {
+        if (typeof LanguageModel === 'undefined' || typeof LanguageModel.create !== 'function') {
+            setStatus('Prompt API unavailable. Enable chrome://flags/#prompt-api in a supported Chrome build.', 'error');
+            return false;
+        }
+
+        if (typeof LanguageModel.availability === 'function') {
+            try {
+                const availability = await LanguageModel.availability({});
+
+                if (availability === 'unavailable') {
+                    setStatus('Prompt API unavailable for this profile or context.', 'error');
+                    return false;
+                }
+
+                if (availability === 'downloadable') {
+                    setStatus('Chrome needs to download built-in model resources. This may take a moment.', 'warning');
+                } else if (availability === 'downloading') {
+                    setStatus('Chrome is downloading built-in model resources. Please wait...', 'warning');
+                } else {
+                    setStatus('Prompt API ready. Ask a question to get started.');
+                }
+            } catch (error) {
+                setStatus(`Prompt API availability check failed: ${error.message}`, 'error');
+                return false;
+            }
+        } else {
+            setStatus('Prompt API ready. Ask a question to get started.');
+        }
+
+        return true;
+    }
+
+    async function promptLanguageModel(question) {
+        if (typeof LanguageModel === 'undefined' || typeof LanguageModel.create !== 'function') {
+            throw new Error('Prompt API unavailable. Enable chrome://flags/#prompt-api.');
+        }
+
+        let session;
+        try {
+            session = await LanguageModel.create({
+                initialPrompts: [
+                    { role: 'system', content: POPUP_SYSTEM_MESSAGE }
+                ]
+            });
+
+            return await session.prompt(question);
+        } catch (error) {
+            if (error?.name === 'NotSupportedError') {
+                throw new Error('Prompt API does not support the requested configuration.');
+            }
+            if (error?.name === 'AbortError') {
+                throw new Error('The prompt was aborted.');
+            }
+            throw error;
+        } finally {
+            try {
+                session?.destroy?.();
+            } catch (cleanupError) {
+                console.log('Error destroying Prompt API session:', cleanupError);
+            }
+        }
+    }
+
+    async function submitQuery() {
+        const query = queryInput.value.trim();
+
         if (!query) {
-            alert('Please enter a query!');
+            alert('Please enter a question or prompt.');
             return;
         }
 
@@ -42,29 +98,13 @@ document.addEventListener('DOMContentLoaded', function() {
         responseText.textContent = '';
 
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "gpt-3.5-turbo",
-                    messages: [{
-                        role: "user",
-                        content: query
-                    }],
-                    temperature: 0.7
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error?.message || 'API request failed');
+            const available = await checkAvailability();
+            if (!available) {
+                throw new Error('Prompt API is not available.');
             }
 
-            responseText.textContent = data.choices[0].message.content;
+            const answer = await promptLanguageModel(query);
+            responseText.textContent = answer;
         } catch (error) {
             responseText.textContent = `Error: ${error.message}`;
         } finally {
@@ -72,14 +112,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Perform initial availability check
+    checkAvailability();
+
     // Submit query on button click
     submitQueryButton.addEventListener('click', submitQuery);
 
     // Submit query on Enter key (without Shift)
     queryInput.addEventListener('keydown', function(event) {
         if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault(); // Prevent new line
+            event.preventDefault();
             submitQuery();
         }
     });
-}); 
+});

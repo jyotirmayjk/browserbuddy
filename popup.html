@@ -6,14 +6,11 @@
 </head>
 <body>
     <div class="container">
-        <h2>OpenAI Query</h2>
-        <div id="api-key-section">
-            <input type="password" id="api-key" placeholder="Enter your OpenAI API key">
-            <button id="save-api-key">Save API Key</button>
-        </div>
+        <h2>Prompt API Query</h2>
+        <div id="status-message"></div>
         <div id="query-section">
-            <textarea id="query-input" placeholder="Enter your query here..."></textarea>
-            <button id="submit-query">Submit Query</button>
+            <textarea id="query-input" placeholder="Ask a question or describe what you need..."></textarea>
+            <button id="submit-query">Ask Chrome AI</button>
         </div>
         <div id="response-section">
             <div id="loading" class="hidden">Loading...</div>
